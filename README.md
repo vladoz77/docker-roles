@@ -1,29 +1,32 @@
 # Ansible role: Docker
 
-Роль устанавливает и настраивает Docker CE на системах Debian/Ubuntu и Red Hat/Rocky Linux.
+Ansible-роль для установки и базовой настройки Docker CE на системах семейства Debian и Red Hat.
 
-Роль выполняет следующие действия:
+Роль:
 
 - добавляет официальный репозиторий Docker;
-- устанавливает Docker и Python SDK для Ansible-модулей Docker;
+- устанавливает Docker CE, Docker CLI, containerd, Buildx и Compose Plugin;
 - запускает и включает сервис Docker;
-- добавляет указанных пользователей в группу `docker`;
-- записывает настройки демона в `/etc/docker/daemon.json`;
-- создает Docker-сеть.
+- создает группу `docker` и добавляет в нее указанных пользователей;
+- записывает параметры Docker daemon в `/etc/docker/daemon.json`.
+
+## Поддерживаемые системы
+
+Роль выбирает набор задач по `ansible_facts.os_family`:
+
+- `Debian` — используется APT-репозиторий Docker;
+- `RedHat` — используется репозиторий Docker для CentOS/RHEL.
+
+Для Debian-систем учитываются архитектуры `x86_64`, `aarch64` и `armv7l`.
 
 ## Требования
 
 - Ansible `2.14` или новее;
 - целевая система семейства Debian или Red Hat;
-- коллекция `community.docker` версии `3.4.0` или новее;
-- подключение к официальным репозиториям Docker;
-- выполнение роли с `become: true`.
+- доступ к официальным репозиториям Docker;
+- запуск роли с повышенными привилегиями (`become: true`).
 
-Установить зависимость можно командой:
-
-```bash
-ansible-galaxy collection install -r requirements.yaml
-```
+Роль использует только встроенные модули Ansible и не требует установки дополнительных коллекций.
 
 ## Использование
 
@@ -43,48 +46,53 @@ roles:
   - role: /path/to/docker-roles
 ```
 
+Пример с настройкой пользователей и Docker daemon:
+
+```yaml
+---
+- name: Configure Docker hosts
+  hosts: docker_hosts
+  become: true
+  vars:
+    docker_users:
+      - deploy
+      - molecule
+    docker_daemon_options:
+      log-opts:
+        max-size: "50m"
+  roles:
+    - role: vlad.docker
+```
+
 После добавления пользователя в группу `docker` ему потребуется заново войти в систему.
 
 ## Переменные
 
 | Переменная | Значение по умолчанию | Описание |
 | --- | --- | --- |
-| `docker_network_name` | `docker_default` | Имя создаваемой Docker-сети. |
-| `docker_network_driver` | `bridge` | Драйвер Docker-сети. |
-| `docker_network_subnet` | `""` | Подсеть сети. Пустое значение отключает явную настройку IPAM. |
 | `docker_service_name` | `docker.service` | Имя systemd-сервиса Docker. |
 | `docker_users` | `["{{ ansible_user_id }}"]` | Пользователи, добавляемые в группу `docker`. |
-| `docker_daemon_options` | `{ log-opts: { max-size: "100m" } }` | Содержимое `/etc/docker/daemon.json`. Пустой словарь отключает создание файла. |
+| `docker_daemon_options` | `{ log-opts: { max-size: "100m" } }` | Содержимое `/etc/docker/daemon.json`. При пустом словаре файл не создается и не изменяется. |
 
-Пример настройки:
-
-```yaml
-docker_users:
-  - deploy
-  - molecule
-
-docker_network_name: app_network
-docker_network_subnet: 172.28.0.0/16
-docker_daemon_options:
-  log-driver: json-file
-  log-opts:
-    max-size: 50m
-```
+Параметры `docker_daemon_options` проверяются перед записью командой `python3 -m json.tool`.
+При изменении конфигурации сервис Docker перезапускается.
 
 ## Тестирование
 
-Тесты Molecule запускаются на Ubuntu Jammy и Rocky Linux 9:
+Для Molecule предусмотрен сценарий с Ubuntu Jammy и Rocky Linux 9:
 
 ```bash
 molecule test
 ```
 
-Для запуска только converge или verify:
+Отдельные этапы сценария:
 
 ```bash
 molecule converge
 molecule verify
 ```
+
+Проверка подтверждает, что сервис Docker активен, команда `docker version` выполняется, а файл daemon-конфигурации существует.
 
 ## Лицензия
 
