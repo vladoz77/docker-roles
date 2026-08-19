@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-defaults:
-  run:
-    working-directory: 'docker-roles'
-
 jobs:
   molecule:
     runs-on: ubuntu-latest
@@ -21,8 +17,6 @@ jobs:
           - ubuntu2404
     steps:
       - uses: actions/checkout@v4
-        with:
-            path: 'geerlingguy.docker'
 
       - name: Set up Python
         uses: actions/setup-python@v5
