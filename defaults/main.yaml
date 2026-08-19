@@ -1,7 +1,4 @@
 # defaults/main.yaml
-docker_network_name: docker_default
-docker_network_driver: bridge
-docker_network_subnet: ""        
 docker_service_name: docker.service
 docker_users:
   - "{{ ansible_user_id }}"

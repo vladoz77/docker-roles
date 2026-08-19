@@ -14,13 +14,6 @@
     state: present
   notify: started_docker
 
-- name: Install Python SDK for Docker modules
-  ansible.builtin.dnf:
-    name:
-      - python3-docker
-      - python3-requests
-    state: present
-
 - name: Ensure docker group exists
   ansible.builtin.group:
     name: docker
@@ -42,13 +35,3 @@
     validate: 'python3 -m json.tool %s'
   when: docker_daemon_options | length > 0
   notify: restarted_docker
-
-
-- name: Flush handlers to ensure Docker service is running
-  ansible.builtin.meta: flush_handlers
-
-- name: Create Docker network
-  community.docker.docker_network:
-    name: "{{ docker_network_name }}"
-    driver: "{{ docker_network_driver }}"
-    ipam_config: "{{ [{'subnet': docker_network_subnet}] if docker_network_subnet else omit }}"
