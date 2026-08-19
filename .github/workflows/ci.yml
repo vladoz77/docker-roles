@@ -21,6 +21,8 @@ jobs:
           - ubuntu2404
     steps:
       - uses: actions/checkout@v4
+        with:
+            path: 'geerlingguy.docker'
 
       - name: Set up Python
         uses: actions/setup-python@v5
