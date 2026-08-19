@@ -1,7 +1,7 @@
 # molecule/default/converge.yml
 - name: Converge
   hosts: all
-  become: true
+  # become: true
   vars:
     docker_users:
       - molecule
