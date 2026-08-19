@@ -1,0 +1,12 @@
+# molecule/default/converge.yml
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    docker_users:
+      - molecule
+    docker_daemon_options:
+      log-opts:
+        max-size: "10m"
+  roles:
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"

@@ -1,0 +1,54 @@
+# tasks/rhel.yaml
+- name: Include RedHat-family vars
+  ansible.builtin.include_vars: rhel.yaml
+
+- name: Add Docker repository
+  ansible.builtin.get_url:
+    url: "{{ repo_url }}"
+    dest: "{{ repo_dest }}"
+    mode: "0644"
+
+- name: Install Docker packages
+  ansible.builtin.dnf:
+    name: "{{ packages }}"
+    state: present
+  notify: started_docker
+
+- name: Install Python SDK for Docker modules
+  ansible.builtin.dnf:
+    name:
+      - python3-docker
+      - python3-requests
+    state: present
+
+- name: Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Add users to docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"
+  tags: [docker_users]
+
+- name: Configure Docker daemon options
+  ansible.builtin.copy:
+    content: "{{ docker_daemon_options | to_nice_json }}"
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+    validate: 'python3 -m json.tool %s'
+  when: docker_daemon_options | length > 0
+  notify: restarted_docker
+
+
+- name: Flush handlers to ensure Docker service is running
+  ansible.builtin.meta: flush_handlers
+
+- name: Create Docker network
+  community.docker.docker_network:
+    name: "{{ docker_network_name }}"
+    driver: "{{ docker_network_driver }}"
+    ipam_config: "{{ [{'subnet': docker_network_subnet}] if docker_network_subnet else omit }}"

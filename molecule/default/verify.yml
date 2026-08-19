@@ -1,0 +1,20 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  tasks:
+    - name: Check docker service is running
+      ansible.builtin.systemd:
+        name: docker.service
+      register: docker_status
+      failed_when: docker_status.status.ActiveState != "active"
+
+    - name: Check docker binary works
+      ansible.builtin.command: docker version
+      register: docker_version
+      changed_when: false
+
+    - name: Check daemon.json content
+      ansible.builtin.slurp:
+        src: /etc/docker/daemon.json
+      register: daemon_json

@@ -1,0 +1,72 @@
+# tasks/ubuntu.yaml
+- name: Include Debian-family vars
+  ansible.builtin.include_vars: ubuntu.yaml
+
+- name: Ensure apt keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add Docker GPG key
+  ansible.builtin.get_url:
+    url: "{{ docker_gpg_key_url }}"
+    dest: "{{ docker_gpg_key_path }}"
+    mode: "0644"
+    force: false
+
+- name: Add Docker apt repository
+  ansible.builtin.apt_repository:
+    repo: "{{ docker_repo }}"
+    filename: docker
+    state: present
+  register: docker_repo_added
+
+- name: Refresh apt cache after repo change
+  ansible.builtin.apt:
+    update_cache: true
+  when: docker_repo_added is changed
+
+
+- name: Install Docker packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    state: present
+  notify: started_docker
+
+- name: Install Python SDK for Docker modules
+  ansible.builtin.apt:
+    name:
+      - python3-docker
+      - python3-requests
+    state: present
+
+- name: Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Add users to docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"
+
+- name: Configure Docker daemon options
+  ansible.builtin.copy:
+    content: "{{ docker_daemon_options | to_nice_json }}"
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+    validate: 'python3 -m json.tool %s'
+  when: docker_daemon_options | length > 0
+  notify: restarted_docker
+
+- name: Flush handlers to ensure Docker service is running
+  ansible.builtin.meta: flush_handlers
+
+- name: Create Docker network
+  community.docker.docker_network:
+    name: "{{ docker_network_name }}"
+    driver: "{{ docker_network_driver }}"
+    ipam_config: "{{ [{'subnet': docker_network_subnet}] if docker_network_subnet else omit }}"

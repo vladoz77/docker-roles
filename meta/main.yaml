@@ -1,0 +1,10 @@
+# meta/main.yml
+galaxy_info:
+  role_name: docker
+  description: Install and configure Docker CE (Debian/RHEL family)
+  author: Vladislav Kovalev
+  license: MIT
+  namespace: vlad
+  min_ansible_version: "2.14"
+collections:
+  - community.docker
