@@ -1,7 +1,7 @@
 ---
 - name: Verify
   hosts: all
-  become: true
+  # become: true
   tasks:
     - name: Check docker service is running
       ansible.builtin.systemd:
