@@ -10,4 +10,4 @@
         max-size: "10m"
 
   roles:
-    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"
+    - role: "docker-roles"

@@ -6,11 +6,19 @@ on:
   pull_request:
     branches: [main]
 
+defaults:
+  run:
+    working-directory: 'docker-roles'
+
 jobs:
   molecule:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        distro:
+          - rockylinux10
+          - ubuntu2404
     steps:
       - uses: actions/checkout@v4
 
@@ -24,4 +32,8 @@ jobs:
           pip install molecule ansible-core "molecule-plugins[docker]" 
 
       - name: Run Molecule
-        run: molecule test 
+        run: molecule test
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+          MOLECULE_DISTRO: ${{ matrix.distro }}
