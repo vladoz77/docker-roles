@@ -1,8 +1,8 @@
 # vars/rhel.yaml
-repo_url: https://download.docker.com/linux/centos/docker-ce.repo
-repo_dest: /etc/yum.repos.d/docker-ce.repo
+docker_repo_url: https://download.docker.com/linux/centos/docker-ce.repo
+docker_repo_dest: /etc/yum.repos.d/docker-ce.repo
 
-packages:
+docker_packages:
   - dnf-plugins-core
   - docker-ce
   - docker-ce-cli
