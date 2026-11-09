@@ -1,9 +1,17 @@
 # tasks/main.yaml
+- name: Check supported OS family
+  ansible.builtin.assert:
+    that: ansible_facts['os_family'] in ['Debian', 'RedHat']
+    fail_msg: "Unsupported OS family: {{ ansible_facts['os_family'] }}"
+
 - name: Docker install (Debian family)
-  ansible.builtin.include_tasks: ubuntu.yaml
+  ansible.builtin.include_tasks: debian.yaml
   when: ansible_facts.os_family == "Debian"
 
 - name: Docker install (RedHat family)
   ansible.builtin.include_tasks: rhel.yaml
   when: ansible_facts.os_family == "RedHat"
+
+- name: Configure Docker
+  ansible.builtin.include_tasks: configure.yaml
     

@@ -1,0 +1,31 @@
+# tasks/configure.yaml
+- name: Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Add users to docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ ((docker_users | length > 0) | ternary(docker_users, [docker_default_user])) | reject('equalto', 'root') | list }}"
+  tags: [docker_users]
+
+- name: Configure Docker daemon options
+  ansible.builtin.copy:
+    content: "{{ docker_daemon_options | to_nice_json }}"
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+    validate: dockerd --validate --config-file=%s
+  when: docker_daemon_options | length > 0
+  notify: restarted_docker
+
+- name: Apply config changes now
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure Docker is started and enabled
+  ansible.builtin.systemd:
+    name: "{{ docker_service_name }}"
+    state: started
+    enabled: true
